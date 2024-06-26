@@ -16,7 +16,7 @@ studentsRouter
 
 
 studentsRouter
-  .route("/")
+  .route("/:id")
   .delete(deleteStudent)
   .patch(editStudent)
   .get(getSingleStudent);
