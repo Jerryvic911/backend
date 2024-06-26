@@ -2,9 +2,9 @@ import express from "express";
 import {
     getAllStudents,
     createStudent,
-    getSingleStudent,
-    editStudentInfo,
+    editStudent,
     deleteStudent,
+    getSingleStudent,
   } from "../controllers/studentControllers.js";
 
 const studentsRouter = express.Router();
@@ -12,12 +12,13 @@ const studentsRouter = express.Router();
 studentsRouter
 .route("/")
 .get(getAllStudents)
-.post(createStudent);
+.post(createStudent)
+
 
 studentsRouter
   .route("/:id")
-  .get(getSingleStudent)
-  .put(editStudentInfo)
-  .delete(deleteStudent);
+  .delete(deleteStudent)
+  .patch(editStudent)
+  .get(getSingleStudent);
 
 export default studentsRouter;
