@@ -19,13 +19,21 @@ const createStudent = async (req, res) => {
     })
 }
 const editStudent = async (req, res) => {
-    const {id} = req.params
+    //best way to write a controller
+    try {
+        const {id} = req.params
     const newStudent = req.body
     const student = await Student.findByIdAndUpdate(id, newStudent)
     res.status(200).json({
         status: "ok",
         data:{Student}
     })
+    } catch (error) {
+        res.status(404).json({
+            status:"fail",
+            message:error
+        })
+    }
   
 };
 const deleteStudent = async (req, res) => {
