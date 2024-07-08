@@ -6,12 +6,13 @@ import {
     deleteStudent,
     getSingleStudent,
   } from "../controllers/studentControllers.js";
+  import { protect } from "../controllers/auth.js";
 
 const studentsRouter = express.Router();
 
 studentsRouter
 .route("/")
-.get(getAllStudents)
+.get(protect, getAllStudents)
 .post(createStudent)
 
 

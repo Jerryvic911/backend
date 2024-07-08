@@ -1,6 +1,6 @@
 import express from "express";
-import {getAllTeachers, createTeacher, getSingleTeacher, editTeacherInfo, deleteTeacher} from "../controllers/teacherControllers.js"
-
+import { getSingleTeacher, editTeacherInfo,} from "../controllers/teacherControllers.js"
+import {getAllStudents} from "./../controllers/studentControllers.js"
 
 const teachersRouter = express.Router();
 
@@ -10,14 +10,12 @@ teachersRouter.param('id', (req, res, next, val)=> {
 })
 
 teachersRouter.route("/")
-.get(getAllTeachers)
-.post(createTeacher);
+.get( getAllStudents)
 
 
 teachersRouter
   .route("/:id")
   .get(getSingleTeacher)
   .put(editTeacherInfo)
-  .delete(deleteTeacher);
 
 export default teachersRouter   

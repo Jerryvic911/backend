@@ -16,6 +16,7 @@ const app = express();
 
 app.use((req, res, next) => {
   console.log("Hello from Middleware");
+ // console.log(req.headers);
   next();
 });
 
