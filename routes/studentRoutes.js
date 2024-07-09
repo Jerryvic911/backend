@@ -6,20 +6,19 @@ import {
     deleteStudent,
     getSingleStudent,
   } from "../controllers/studentControllers.js";
-  import { protect } from "../controllers/auth.js";
+  import { protect, restrictTo } from "../controllers/auth.js";
 
 const studentsRouter = express.Router();
 
 studentsRouter
 .route("/")
-.get(protect, getAllStudents)
+.get(protect, restrictTo("bursar", "admin"), getAllStudents)
 .post(createStudent)
 
 
 studentsRouter
   .route("/:id")
-  .delete(deleteStudent)
   .patch(editStudent)
-  .get(getSingleStudent);
+  .get(protect , getSingleStudent);
 
 export default studentsRouter;

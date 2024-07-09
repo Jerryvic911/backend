@@ -76,21 +76,30 @@ const protect = catchAsync(async (req, res, next) => {
   console.log(decoded);
   //verify the token still exist
 
-  const freshUser = await User.findById(decoded.id);
-  if (!freshUser) {
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
     return next(new AppError("the user is no longer among us"));
   }
 
   //check if the user changed password after token after token was issued
-  if (freshUser.changedPasswordAfter(decoded.iat)) {
+  if (currentUser.changedPasswordAfter(decoded.iat)) {
     return next(
       new AppError("user recently changed password please login again", 401)
     );
   }
 
   //Grant access
-  req.user = freshUser;
+  req.user = currentUser;
   next();
 });
 
-export { signUp, login, protect };
+ const restrictTo = (...roles) => {
+  return (req, res, next) => {
+      if (!roles.includes(req.user.role)){
+        return next (new AppError("You do not have access to view this", 403))
+      }
+      next()
+  }
+ }
+
+export { signUp, login, protect, restrictTo };
