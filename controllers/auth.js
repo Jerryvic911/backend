@@ -3,6 +3,28 @@ import jwt from "jsonwebtoken";
 import AppError from "../uitils/appError.js";
 import catchAsync from "../uitils/catchAsync.js";
 import { promisify } from "util";
+import Student from "../models/studentModel.js";
+
+
+const getAllStudents = async (req, res) => {
+    const newStudent = await Student.find();
+    res.status(200).json({
+        result: newStudent.length,
+        "status": "ok",
+        newStudent
+    })
+}
+
+
+const deleteUser = async (req, res) => {
+  const {id} = req.params
+  const newUser = req.body
+  const user = await User.findByIdAndDelete(id)
+  res.status(200).json({
+      status: "ok",
+      data:{User}
+  });
+}
 
 const signedToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -18,7 +40,10 @@ const signUp = async (req, res) => {
     password: req.body.password,
     confirmPassword: req.body.confirmPassword,
     passwordChangedAt: req.body.passwordChangedAt,
+    role:req.body.role
   });
+
+ 
 
   const token = signedToken(newUser._id);
   res.status(201).json({
@@ -102,4 +127,4 @@ const protect = catchAsync(async (req, res, next) => {
   }
  }
 
-export { signUp, login, protect, restrictTo };
+export { signUp, login, protect, restrictTo, deleteUser, getAllStudents};

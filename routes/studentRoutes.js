@@ -1,9 +1,9 @@
+
 import express from "express";
 import {
     getAllStudents,
     createStudent,
     editStudent,
-    deleteStudent,
     getSingleStudent,
   } from "../controllers/studentControllers.js";
   import { protect, restrictTo } from "../controllers/auth.js";
@@ -19,6 +19,6 @@ studentsRouter
 studentsRouter
   .route("/:id")
   .patch(editStudent)
-  .get(protect , getSingleStudent);
+  .get(protect ,restrictTo("bursar", "admin"), getSingleStudent);
 
 export default studentsRouter;

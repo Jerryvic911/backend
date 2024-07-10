@@ -14,17 +14,22 @@ const __dirname = dirname(dirname(fileURLToPath(import.meta.url)))
 
 const app = express();
 
+
+
 app.use((req, res, next) => {
   console.log("Hello from Middleware");
  // console.log(req.headers);
   next();
 });
 
+
+
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.static(path.join(__dirname + "/public")))
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
+
 
 app.get("/", (req,res) => {
   res.status(200).json({
