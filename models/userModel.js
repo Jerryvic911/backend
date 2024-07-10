@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema({
 
     },
 
+    avatar:{
+        type: String,
+    },
+
     confirmPassword:{
         type: String,
         required: [true, "confirm password"],
@@ -52,6 +56,8 @@ const userSchema = new mongoose.Schema({
         enum: ["student", "teacher", "bursar", "admin" ],
         default: "student"
     },
+
+    
 
     passwordChangedAt:Date  
 })
