@@ -4,6 +4,7 @@ import AppError from "../uitils/appError.js";
 import catchAsync from "../uitils/catchAsync.js";
 import { promisify } from "util";
 import Student from "../models/studentModel.js";
+import { updateUserRoleService } from "../services/authService.js";
 
 
 const getAllAdmins = async (req, res) => {
@@ -136,4 +137,37 @@ const protect = catchAsync(async (req, res, next) => {
   }
  }
 
-export { signUp, login, protect, restrictTo, deleteUser, getAllAdmins, deleteStudent};
+  const updateUserRole = catchAsync(
+  async (req, res, next) => {
+    
+      const { email, role } = req.body;
+      const isUserExist = await User.findOne({ email });
+      const id = isUserExist._id;
+      if (!isUserExist) {
+        return next(new AppError("this user does not exist", 400));
+      }
+     
+      updateUserRoleService(res, id, role);
+    
+  }
+);
+
+// const updateUserRole = catchAsync(
+//   async (req, res, next) => {
+//       const { email, role } = req.body;
+//       const isUserExist = await User.findOne({ email });
+//       if (isUserExist) {
+//         //const id = isUserExist._id;
+//         updateUserRoleService(res,  role);
+//       } else {
+//         res.status(400).json({
+//           success: false,
+//           message: "User not found",
+//         });
+//       }
+//       return next(new AppError("something went very wrong", 400));
+//     
+//   }
+// );
+
+export { signUp, login, protect, restrictTo, deleteUser, getAllAdmins, deleteStudent, updateUserRole};
