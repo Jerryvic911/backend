@@ -36,16 +36,7 @@ const editStudent = async (req, res) => {
     }
   
 };
-const deleteStudent = async (req, res) => {
-    const {id} = req.params
-    const newStudent = req.body
-    const student = await Student.findByIdAndDelete(id)
-    res.status(200).json({
-        status: "ok",
-        data:{Student}
-    })
-  
-};
+
 const getSingleStudent = async (req, res) => {
     const {id} = req.params
     const newStudent = req.body
@@ -63,4 +54,4 @@ const getSingleStudent = async (req, res) => {
 
 
 
-export {getAllStudents, createStudent,  editStudent, deleteStudent, getSingleStudent}
+export {getAllStudents, createStudent,  editStudent, getSingleStudent}

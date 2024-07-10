@@ -6,25 +6,34 @@ import { promisify } from "util";
 import Student from "../models/studentModel.js";
 
 
-const getAllStudents = async (req, res) => {
-    const newStudent = await Student.find();
-    res.status(200).json({
-        result: newStudent.length,
-        "status": "ok",
-        newStudent
-    })
+const getAllAdmins = async (req, res) => {
+  const newAdmin = await User.find();
+  res.status(200).json({
+      result: newAdmin.length,
+      "status": "ok",
+      newAdmin
+  })
 }
 
 
 const deleteUser = async (req, res) => {
   const {id} = req.params
-  const newUser = req.body
-  const user = await User.findByIdAndDelete(id)
+  const newAdmin = req.body
+  const admin = await User.findByIdAndDelete(id)
   res.status(200).json({
       status: "ok",
       data:{User}
   });
 }
+const deleteStudent = async (req, res) => {
+  const {id} = req.params
+  const newStudent = req.body
+  const student = await Student.findByIdAndDelete(id)
+  res.status(200).json({
+      status: "ok",
+      data:{Student}
+  });
+};
 
 const signedToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -127,4 +136,4 @@ const protect = catchAsync(async (req, res, next) => {
   }
  }
 
-export { signUp, login, protect, restrictTo, deleteUser, getAllStudents};
+export { signUp, login, protect, restrictTo, deleteUser, getAllAdmins, deleteStudent};
