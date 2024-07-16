@@ -35,21 +35,21 @@ const userSchema = new mongoose.Schema({
 
     },
 
-    avatar:{
-        type: String,
-    },
+    // avatar:{
+    //     type: String,
+    // },
 
-    confirmPassword:{
-        type: String,
-        required: [true, "confirm password"],
-        select: false,
-        validate: {
-            validator : function (el){
-                return el === this.password
-            },
-            message:"password does not match"
-        }
-    },
+    // confirmPassword:{
+    //     type: String,
+    //     required: [true, "confirm password"],
+    //     select: false,
+    //     validate: {
+    //         validator : function (el){
+    //             return el === this.password
+    //         },
+    //         message:"password does not match"
+    //     }
+    // },
 
     role:{
         type: String,
