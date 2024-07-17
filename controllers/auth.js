@@ -10,6 +10,7 @@ import path from 'path';
 import {sendMail} from "../uitils/sendMail.js"
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import crypto from "crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,10 +30,10 @@ const getAllAdmins = async (req, res) => {
 const deleteUser = async (req, res) => {
   const { email } = req.params;
   const newAdmin = req.body;
-  const admin = await User.findOneAndDelete(email);
+  const user = await User.findOneAndDelete({email});
   res.status(200).json({
     status: "ok",
-    data: { User },
+    data: { user },
   });
 };
 const deleteStudent = async (req, res) => {
@@ -49,6 +50,35 @@ const signedToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES,
   });
+};
+
+const createSendToken = (user, statusCode, res) => {
+  const token = signedToken(user._id);
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true
+  };
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+  res.cookie('jwt', token, cookieOptions);
+
+  // Remove password from output
+  user.password = undefined;
+
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: {
+      user
+    }
+  });
+// const token = signedToken(user._id);
+//   res.status(200).json({
+//     status: "success",
+//     token,
+//   });
 };
 
 // const signUp = catchAsync ( async (req, res, next) => {
@@ -134,8 +164,8 @@ const signedToken = (id) => {
 
       const activationCode = activationToken.activationCode;
 
-      const url = `${req.protocol}://${req.get('host')}/me`;
-      const data = { user: { name: user.name }, activationCode, url };
+      //const url = `${req.protocol}://${req.get('host')}/${user.name}`; //to send link to email
+      const data = { user: { name: user.name }, activationCode, };
       const html = await ejs.renderFile(
         path.join(__dirname, "../mails/activation-email.ejs"),
         data
@@ -201,6 +231,90 @@ const activateUser = catchAsync(
     }
     }
   );
+
+//forgot password controller
+const forgotPassword = catchAsync(async (req, res, next) => {
+  // 1) Get user based on provided email
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new AppError('There is no user with email address.', 404));
+  }
+
+  // 2) Generate the random reset token
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+  const resetURL = `${req.protocol}://${req.get('host')}/api/v1/auth/resetpassword/${resetToken}`;
+
+  // 3) Send it to user's email
+  try {
+    
+
+    //send the email
+    const data = { resetURL };
+      const html = await ejs.renderFile(
+        path.join(__dirname, "../mails/forgot-password-email.ejs"),
+        data
+      );
+
+      try {
+        await sendMail({
+          email: user.email,
+          subject: "reset password",
+          template: "forgot-password-email.ejs",
+          data,
+        });
+
+        res.status(201).json({
+          success: true,
+          message: `Please check your email  to reset your password!`
+        });
+      } catch (error) {
+        return next(new AppError(error.message, 400));
+      }
+
+  } catch (error) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError(error.message, 500),
+      
+    );
+  }
+});
+
+const resetPassword = catchAsync(async (req, res, next) => {
+  const token = req.params.token
+  // 1) Get user based on the token
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() }
+  });
+
+  // 2) If token has not expired, and there is user, set the new password
+  if (!user) {
+    return next(new AppError('Token is invalid or has expired', 400));
+  }
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+
+  // 3) Update changedPasswordAt property for the user
+  // 4) Log the user in, send JWT
+  createSendToken(user, 200, req, res);
+});
+
+
+
+
 
  
 // const signUp = catchAsync(
@@ -425,4 +539,6 @@ export {
   updateUserRole,
   createActivationToken,
   activateUser,
+  forgotPassword,
+  resetPassword
 };

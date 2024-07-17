@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs"
+import crypto from "crypto"
 
 const userSchema = new mongoose.Schema({
     name:{
@@ -39,17 +40,20 @@ const userSchema = new mongoose.Schema({
     //     type: String,
     // },
 
-    // confirmPassword:{
-    //     type: String,
-    //     required: [true, "confirm password"],
-    //     select: false,
-    //     validate: {
-    //         validator : function (el){
-    //             return el === this.password
-    //         },
-    //         message:"password does not match"
-    //     }
-    // },
+    confirmPassword:{
+        type: String,
+        required: [true, "confirm password"],
+        select: false,
+        validate: {
+            validator : function (el){
+                return el === this.password
+            },
+            message:"password does not match"
+        }
+    },
+    passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date,
 
     role:{
         type: String,
@@ -59,7 +63,7 @@ const userSchema = new mongoose.Schema({
 
     
 
-    passwordChangedAt:Date  
+    
 })
 
 userSchema.pre("save", async function (next){
@@ -86,6 +90,21 @@ userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
   
     // False means NOT changed
     return false;
+  };
+  
+  userSchema.methods.createPasswordResetToken = function() {
+    const resetToken = crypto.randomBytes(32).toString('hex');// create reset token by creating random token
+  
+    this.passwordResetToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+  
+    console.log({ resetToken }, this.passwordResetToken);
+  
+    this.passwordResetExpires = Date.now() + 10 * 60 * 1000; //current time + 10min
+  
+    return resetToken;
   };
 
 
