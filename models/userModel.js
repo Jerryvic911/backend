@@ -55,7 +55,15 @@ const userSchema = new mongoose.Schema({
     enum: ["student", "teacher", "bursar", "admin"],
     default: "student",
   },
+
+  createdAt:{
+   type: Date,
+   default: Date.now(),
+   select: false
+  }
 });
+
+
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();

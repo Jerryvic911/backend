@@ -16,12 +16,48 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 // Get the directory name of the current module
 
+
 const getAllAdmins = async (req, res) => {
-  const newAdmin = await User.find();
+//1:filter
+ //1a: build the query
+  const queryObj = {...req.query}
+  const excludedField = ["page", "sort", "limit", "fields"]
+  //console.log(req.query, queryObj)
+  excludedField.forEach(el => delete queryObj[el])
+  //1a: await the query
+  let queryStr = JSON.stringify(queryObj)
+  //replace gte,gt,lte,lt
+ queryStr =  queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
+  console.log(JSON.parse(queryStr))
+  let query =  User.find(JSON.parse(queryStr));
+   //2:sorting
+   if (req.query.sort){
+      const sortBy = req.query.sort.split(",").join(" ")
+      console.log(sortBy)
+      query = query.sort(sortBy)
+   }else {
+    query = query.sort("createdAt")
+   }
+
+   //3: fields limit 
+   if (req.query.fields){
+    const fields = req.query.fields.split(",").join(" ")
+    console.log(fields)
+    query = query.select(fields)
+ }else {
+  query = query.sort("-__v")
+ }
+  
+
+
+
+  const user = await query
+  
+ //const user = await User.find().where("role").equals("user")
   res.status(200).json({
-    result: newAdmin.length,
+    result: user.length,
     status: "ok",
-    newAdmin,
+    user,
   });
 };
 
@@ -51,32 +87,21 @@ const signedToken = (id) => {
 };
 
 const createSendToken = (user, statusCode, res) => {
-  const token = signedToken(user._id);
-  const cookieOptions = {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-    ),
+   const token = signedToken(user._id);
+   const cookieOptions = {
+    expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
     httpOnly: true,
-  };
-  if (process.env.NODE_ENV === "production") cookieOptions.secure = true;
-
-  res.cookie("jwt", token, cookieOptions);
-
-  // Remove password from output
+  }
+  if (process.env.NODE_ENV === "production") cookieOptions.secure = true
+    res.cookie("jwt", token, cookieOptions )
+  //don't send password to the client
   user.password = undefined;
 
-  res.status(statusCode).json({
-    status: "success",
-    token,
-    data: {
-      user,
-    },
-  });
-  // const token = signedToken(user._id);
-  //   res.status(200).json({
-  //     status: "success",
-  //     token,
-  //   });
+    res.status(statusCode).json({
+      status: "success",
+      token,
+      data: {user}
+    });
 };
 
 // const signUp = catchAsync ( async (req, res, next) => {
@@ -293,7 +318,7 @@ const resetPassword = catchAsync(async (req, res, next) => {
 
   // 3) Update changedPasswordAt property for the user
   // 4) Log the user in, send JWT
-  createSendToken(user, 200, req, res);
+  createSendToken(user, 200,res);
 });
 
 // const signUp = catchAsync(
@@ -377,11 +402,12 @@ const login = catchAsync(async (req, res, next) => {
   }
 
   //if everything is ok send token to client
-  const token = signedToken(user._id);
-  res.status(200).json({
-    status: "success",
-    token,
-  });
+  createSendToken(user, 200, res)
+  // const token = signedToken(user._id);
+  // res.status(200).json({
+  //   status: "success",
+  //   token,
+  // });
 });
 
 const protect = catchAsync(async (req, res, next) => {
@@ -393,7 +419,7 @@ const protect = catchAsync(async (req, res, next) => {
   ) {
     token = req.headers.authorization.split(" ")[1];
   }
-  console.log(token);
+ // console.log(token);
   if (!token) {
     return next(
       new AppError(
@@ -404,7 +430,7 @@ const protect = catchAsync(async (req, res, next) => {
   }
   //verify the token
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-  console.log(decoded);
+  //console.log(decoded);
   //verify the token still exist
 
   const currentUser = await User.findById(decoded.id);

@@ -9,10 +9,27 @@ import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import AppError from "./uitils/appError.js";
 import errorHandler from "./controllers/errorHandler.js";
+import expressRateLimiter from "express-rate-limit";
+import helmet from "helmet";
+//import { xss } from "express-xss-sanitizer";
+import ExpressMongoSanitize from "express-mongo-sanitize";
 
 const __dirname = dirname(dirname(fileURLToPath(import.meta.url)));
 
+
 const app = express();
+//helmet is a security middlware
+app.use(helmet())
+
+//limit amount of login
+// const limiter = expressRateLimiter({
+//   max: 5,
+//   windowMs: 5 * 60  * 1000,
+//   message: "too many request try again after 5mins"
+// })
+
+// app.use("/api" , limiter)
+
 
 app.use((req, res, next) => {
   console.log("Hello from Middleware");
@@ -25,6 +42,12 @@ app.use(morgan("dev"));
 app.use(express.static(path.join(__dirname + "/public")));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
+//sanitaise data to help protect your site no sql querry injection
+app.use(ExpressMongoSanitize())
+//data sanitaise xss
+//app.use(xss())
+
+
 
 app.get("/", (req, res) => {
   res.status(200).json({
