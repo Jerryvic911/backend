@@ -4,6 +4,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import studentsRouter from "./routes/studentRoutes.js";
 import teachersRouter from "./routes/teacherRoutes.js";
+import adminRouter from "./routes/adminRouter.js";
 import authRouter from "./routes/authRouter.js";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
@@ -59,6 +60,7 @@ app.get("/", (req, res) => {
 app.use("/api/v1/students", studentsRouter);
 app.use("/api/v1/teachers", teachersRouter);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/auth", adminRouter)
 
 //handle 404 error
 app.get("*", (req, res, next) => {

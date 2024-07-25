@@ -17,68 +17,13 @@ const __dirname = dirname(__filename);
 // Get the directory name of the current module
 
 
-const getAllAdmins = async (req, res) => {
-//1:filter
- //1a: build the query
-  const queryObj = {...req.query}
-  const excludedField = ["page", "sort", "limit", "fields"]
-  //console.log(req.query, queryObj)
-  excludedField.forEach(el => delete queryObj[el])
-  //1a: await the query
-  let queryStr = JSON.stringify(queryObj)
-  //replace gte,gt,lte,lt
- queryStr =  queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
-  console.log(JSON.parse(queryStr))
-  let query =  User.find(JSON.parse(queryStr));
-   //2:sorting
-   if (req.query.sort){
-      const sortBy = req.query.sort.split(",").join(" ")
-      console.log(sortBy)
-      query = query.sort(sortBy)
-   }else {
-    query = query.sort("createdAt")
-   }
-
-   //3: fields limit 
-   if (req.query.fields){
-    const fields = req.query.fields.split(",").join(" ")
-    console.log(fields)
-    query = query.select(fields)
- }else {
-  query = query.sort("-__v")
- }
+const  aliasTop5 = async(req, res, next) => {
+  req.query.limit = "5"
+  req.query.sort = "-rating , price"
+  req.query.fields = "name , email"
   
-
-
-
-  const user = await query
-  
- //const user = await User.find().where("role").equals("user")
-  res.status(200).json({
-    result: user.length,
-    status: "ok",
-    user,
-  });
-};
-
-const deleteUser = async (req, res) => {
-  const { email } = req.params;
-  const newAdmin = req.body;
-  const user = await User.findOneAndDelete({ email });
-  res.status(200).json({
-    status: "ok",
-    data: { user },
-  });
-};
-const deleteStudent = async (req, res) => {
-  const { id } = req.params;
-  const newStudent = req.body;
-  const student = await Student.findByIdAndDelete(id);
-  res.status(200).json({
-    status: "ok",
-    data: { Student },
-  });
-};
+  next()
+}
 
 const signedToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -162,56 +107,7 @@ const createSendToken = (user, statusCode, res) => {
 //   }
 
 // });
-const signUp = catchAsync(async (req, res, next) => {
-  try {
-    const { name, email, password, confirmPassword, phoneNumber, role } =
-      req.body;
 
-    const isEmailExist = await User.findOne({ email });
-    if (isEmailExist) {
-      return next(new AppError("Email already exist", 400));
-    }
-
-    const user = {
-      name,
-      email,
-      password,
-      confirmPassword,
-      phoneNumber,
-      role,
-    };
-
-    const activationToken = createActivationToken(user);
-
-    const activationCode = activationToken.activationCode;
-
-    //const url = `${req.protocol}://${req.get('host')}/${user.name}`; //to send link to email
-    const data = { user: { name: user.name }, activationCode };
-    const html = await ejs.renderFile(
-      path.join(__dirname, "../mails/activation-email.ejs"),
-      data
-    );
-
-    try {
-      await sendMail({
-        email: user.email,
-        subject: "Activate your account",
-        template: "activation-email.ejs",
-        data,
-      });
-
-      res.status(201).json({
-        success: true,
-        message: `Please check your email: ${user.email} to activate your account!`,
-        activationToken: activationToken.token,
-      });
-    } catch (error) {
-      return next(new AppError(error.message, 400));
-    }
-  } catch (error) {
-    return next(new AppError(error.message, 400));
-  }
-});
 
 const activateUser = catchAsync(async (req, res, next) => {
   try {
@@ -386,29 +282,7 @@ const createActivationToken = (user) => {
   return { token, activationCode };
 };
 
-const login = catchAsync(async (req, res, next) => {
-  const { email, password } = req.body;
 
-  //check if email and password are provided
-  if (!email || !password) {
-    return next(new AppError("please provide email and password", 400));
-  }
-
-  //check if user exist and password is correct
-  const user = await User.findOne({ email }).select("+password");
-  // const correct =
-  if (!user || !(await user.correctPassword(password, user.password))) {
-    return next(new AppError("incorrect email or password", 401));
-  }
-
-  //if everything is ok send token to client
-  createSendToken(user, 200, res)
-  // const token = signedToken(user._id);
-  // res.status(200).json({
-  //   status: "success",
-  //   token,
-  // });
-});
 
 const protect = catchAsync(async (req, res, next) => {
   //check if theres token
@@ -459,16 +333,7 @@ const restrictTo = (...roles) => {
   };
 };
 
-const updateUserRole = catchAsync(async (req, res, next) => {
-  const { email, role } = req.body;
-  const isUserExist = await User.findOne({ email });
-  const id = isUserExist._id;
-  if (!isUserExist) {
-    return next(new AppError("this user does not exist", 400));
-  }
 
-  updateUserRoleService(res, id, role);
-});
 
 // const updateUserRole = catchAsync(
 //   async (req, res, next) => {
@@ -534,16 +399,12 @@ const updateUserRole = catchAsync(async (req, res, next) => {
 //  });
 
 export {
-  signUp,
-  login,
   protect,
   restrictTo,
-  deleteUser,
-  getAllAdmins,
-  deleteStudent,
-  updateUserRole,
+  aliasTop5,
   createActivationToken,
   activateUser,
   forgotPassword,
   resetPassword,
+  createSendToken
 };
